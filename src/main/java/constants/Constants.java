@@ -26,7 +26,7 @@ public class Constants {
     public static final String DRAGON = "dragon";
     public static final String NEUTRAL = "neutral";
     public static final String[] CLANS = {"lion", "scorpion", "phoenix", "crane", "crab", "unicorn", "dragon"};
-    public static final String[] FAMILIES = {};
+    public static final String[] FAMILIES = {}; //TODO
 
 /* Constants about roles */
     public static final String SUPPORT = "support";
@@ -59,4 +59,5 @@ public class Constants {
     public static final String CONFLICT_OPEN = "[conflict-";
     public static final String ELEMENT_OPEN = "[element-";
     public static final String CLAN_OPEN = "[clan-";
+    public static final String KEYWORD_CLOSE = "]";
 }

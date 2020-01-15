@@ -9,9 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static constants.Constants.NEUTRAL;
-import static constants.Constants.NULL;
+import static constants.Constants.*;
 
 public final class Utils {
 
@@ -166,35 +167,72 @@ public final class Utils {
      * - Restricciones de elemento -> OK
      * - Restricciones de rol -> OK
      * - Palabras clave en su texto:
-     *      - Clan
-     *      - Conflicto
-     *      - Elemento
-     *      - Rasgo
-     * - Apellidos de una familia en su nombre.
-     * - Cosas concretas de la carta, en el Array (elementos, allowed clans) --> Falta meterlo en la llamada original.
+     *      - Clan -> OK
+     *      - Conflicto  -> OK
+     *      - Elemento  -> OK
+     *      - Rasgo -> OK
+     * - Apellidos de una familia en su nombre. -> Tengo que hacer la lista
+     * - Lista de elementos -> OK
+     * - Lista de clanes admitidos: Si permite todos, no se añade ninguno -> OK
      */
-    public List<String> getAllTraitsFromCard(String text,String clan, String role_limit, String element_limit, List<String> current_traits, List<String> others) {
+    public List<String> getAllTraitsFromCard(String cardName, String text,String clan, String role_limit, String element_limit, List<String> current_traits, List<String> elementList, List<String> allowedClans) {
         List<String> traits = new ArrayList<>(current_traits);
-        if(strValid(clan) && clan != NEUTRAL && !isPresentInList(traits,clan))
+        if(strValid(clan) && !clan.equalsIgnoreCase(NEUTRAL) && !traits.contains(clan))
             traits.add(clan);
-        if(strValid(role_limit) && !isPresentInList(traits,role_limit))
+        if(strValid(role_limit) && !traits.contains(role_limit))
             traits.add(role_limit);
-        if(strValid(element_limit) && !isPresentInList(traits,element_limit))
+        if(strValid(element_limit) && !traits.contains(element_limit))
             traits.add(element_limit);
-        compareTraitList(traits,others);
-        return null;
+        if(!element_limit.isEmpty())
+            elementList.stream().filter(elem -> !traits.contains(elem)).forEach(traits::add);
+        if(!allowedClans.isEmpty() && allowedClans.size() < 7)
+            allowedClans.stream().filter(aClan -> !traits.contains(aClan)).forEach(traits::add);
+        checkKeywords(traits,text);
+        checkTraitsInText(traits,text);
+
+        return traits;
     }
 
-    private boolean isPresentInList(List<String> list, String str) {
-        return list.contains(str);
+    private void checkTraitsInText(List<String> traits, String text) {
+        Pattern pattern = Pattern.compile(EM_OPEN);
+        Matcher matcher = pattern.matcher(text);
+        if(matcher.matches()) {
+            String[] split = text.split(pattern.pattern());
+            for(String piece : split) {
+                if(piece.contains(EM_CLOSE)) {
+                    int close = piece.indexOf(EM_CLOSE);
+                    String newTrait = piece.substring(0, close);
+                    if(!traits.contains(newTrait))
+                        traits.add(newTrait);
+                }
+            }
+        }
+    }
+
+    private void checkKeywords(List<String> traits, String text) {
+        Pattern[] patterns = new Pattern[] {Pattern.compile(CLAN_OPEN),Pattern.compile(CONFLICT_OPEN),Pattern.compile(ELEMENT_OPEN)};
+        for(Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(text);
+            if(matcher.matches()) {
+                String[] split =  text.split(pattern.pattern());
+                for(String piece : split) {
+                    if(piece.contains(KEYWORD_CLOSE)) {
+                        int close = piece.indexOf(KEYWORD_CLOSE);
+                        String newTrait = piece.substring(0, close);
+                        if(!traits.contains(newTrait))
+                            traits.add(newTrait);
+                    }
+                }
+            }
+        }
     }
 
     private boolean strValid(String str) {
-        return (!str.isEmpty() && str != null && !str.equalsIgnoreCase(NULL));
+        return ( str != null && !str.isEmpty() && !str.equalsIgnoreCase(NULL));
     }
 
     private void compareTraitList(List<String> traits, List<String> others) {
-        others.stream().filter(str -> !isPresentInList(traits,str)).forEach(str -> traits.add(str));
+    others.stream().filter(str -> !traits.contains(str)).forEach(traits::add);
     }
 
 }
